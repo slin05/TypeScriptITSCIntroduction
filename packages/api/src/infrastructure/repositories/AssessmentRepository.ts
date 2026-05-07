@@ -1,10 +1,11 @@
 import { IAssessmentRepository } from '../../application/contracts';
 import { Assessment as AssessmentType, CreateAssessmentDTO } from '../../types';
+import { Assessment } from '../sequelize/models/Assessment';
 
 export class AssessmentRepository implements IAssessmentRepository {
   public async create(assessmentData: CreateAssessmentDTO): Promise<AssessmentType> {
-    // TODO: Implement Create
-    return Promise.reject(new Error(`Not implemented`));
+    const assessment = await Assessment.create(assessmentData);
+    return assessment;
   }
 
   public async findAll(): Promise<AssessmentType[]> {

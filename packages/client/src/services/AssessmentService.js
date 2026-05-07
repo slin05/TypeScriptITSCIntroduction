@@ -1,6 +1,10 @@
 import Axios from '../utils/http.config';
 
 export class AssessmentService {
+  static create(assessment) {
+    return this.submit(assessment);
+  }
+
   static submit(assessment) {
     try {
       // TODO: Choose the correct method, url, and data to send
