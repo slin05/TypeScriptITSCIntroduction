@@ -1,90 +1,144 @@
-import React, { useState } from 'react';
-import { Button, Form } from 'react-bootstrap';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Alert, Button, Form } from 'react-bootstrap';
 import { AssessmentService } from '../../services/AssessmentService';
 
+const INSTRUMENT_TYPE = `Cat Behavioral Instrument`;
+
+const QUESTIONS = [
+  {
+    id: `q1`,
+    options: [{ label: `No`, score: 0 }, { label: `Yes`, score: 1 }],
+    text: `Previous contact with the Cat Judicial System`,
+  },
+  {
+    id: `q2`,
+    options: [{ label: `0-3 altercations`, score: 0 }, { label: `3+ altercations`, score: 1 }],
+    text: `Physical altercations with other cats`,
+  },
+  {
+    id: `q3`,
+    options: [{ label: `0-10 altercations`, score: 0 }, { label: `10+ altercations`, score: 1 }],
+    text: `Physical altercations with owner (scratching, biting, etc...)`,
+  },
+  {
+    id: `q4`,
+    options: [{ label: `Yes`, score: 0 }, { label: `No`, score: 1 }],
+    text: `Plays well with dogs`,
+  },
+  {
+    id: `q5`,
+    options: [{ label: `No`, score: 0 }, { label: `Yes`, score: 1 }],
+    text: `Hisses at strangers`,
+  },
+];
+
+const getRiskLevel = (score) => {
+  if (score <= 1) {
+    return `low`;
+  }
+  if (score <= 3) {
+    return `medium`;
+  }
+  return `high`;
+};
+
 export const NewAssessment = () => {
-  const [ formData, setFormData ] = useState({
-    catDateOfBirth: ``,
-    catName: ``,
-    instrumentType: ``,
-    riskLevel: ``,
-    score: 0,
-  });
+  const [ submitStatus, setSubmitStatus ] = useState(null);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: name === `score` ? parseInt(value) : value });
-  };
+  const {
+    formState: { errors, isSubmitting },
+    handleSubmit,
+    register,
+    reset,
+  } = useForm();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
+    setSubmitStatus(null);
     try {
-      await AssessmentService.submit(formData);
-      alert(`Assessment created successfully!`);
-      // Reset form or redirect
-    } catch (error) {
-      alert(`Error creating assessment: ${error.message}`);
+      const score = QUESTIONS.reduce((sum, q) => sum + Number(data[q.id]), 0);
+      await AssessmentService.submit({
+        catDateOfBirth: data.catDateOfBirth,
+        catName: data.catName,
+        instrumentType: INSTRUMENT_TYPE,
+        riskLevel: getRiskLevel(score),
+        score,
+      });
+      setSubmitStatus({ message: `Assessment submitted successfully!`, type: `success` });
+      reset();
+    } catch (err) {
+      setSubmitStatus({ message: `Submission failed: ${err.message}`, type: `danger` });
     }
   };
 
-  return <Form onSubmit={handleSubmit}>
-    <Form.Group controlId="catName">
+  return <Form onSubmit={handleSubmit(onSubmit)} noValidate>
+    <h4 className="mb-4">New Assessment</h4>
+
+    {submitStatus &&
+      <Alert
+        dismissible
+        variant={submitStatus.type}
+        onClose={() => setSubmitStatus(null)}
+      >
+        {submitStatus.message}
+      </Alert>}
+
+    <Form.Group className="mb-3" controlId="instrumentType">
+      <Form.Label>Instrument</Form.Label>
+      <Form.Control readOnly type="text" value={INSTRUMENT_TYPE} />
+    </Form.Group>
+
+    <Form.Group className="mb-3" controlId="catName">
       <Form.Label>Cat Name</Form.Label>
       <Form.Control
+        isInvalid={!!errors.catName}
+        placeholder="e.g. Mr. Fluffykins"
         type="text"
-        name="catName"
-        value={formData.catName}
-        onChange={handleChange}
-        required
+        {...register(`catName`, { required: `Cat name is required` })}
       />
+      <Form.Control.Feedback type="invalid">
+        {errors.catName?.message}
+      </Form.Control.Feedback>
     </Form.Group>
 
-    <Form.Group controlId="catDateOfBirth">
+    <Form.Group className="mb-3" controlId="catDateOfBirth">
       <Form.Label>Cat Date of Birth</Form.Label>
       <Form.Control
+        isInvalid={!!errors.catDateOfBirth}
         type="date"
-        name="catDateOfBirth"
-        value={formData.catDateOfBirth}
-        onChange={handleChange}
-        required
+        {...register(`catDateOfBirth`, { required: `Date of birth is required` })}
       />
+      <Form.Control.Feedback type="invalid">
+        {errors.catDateOfBirth?.message}
+      </Form.Control.Feedback>
     </Form.Group>
 
-    <Form.Group controlId="instrumentType">
-      <Form.Label>Instrument Type</Form.Label>
-      <Form.Control
-        type="text"
-        name="instrumentType"
-        value={formData.instrumentType}
-        onChange={handleChange}
-        required
-      />
-    </Form.Group>
+    <hr className="my-4" />
+    <h5 className="mb-3">Assessment Questions</h5>
 
-    <Form.Group controlId="score">
-      <Form.Label>Score</Form.Label>
-      <Form.Control
-        type="number"
-        name="score"
-        value={formData.score}
-        onChange={handleChange}
-        min="0"
-        max="5"
-        required
-      />
-    </Form.Group>
+    {QUESTIONS.map((question, index) =>
+      <Form.Group key={question.id} className="mb-4">
+        <Form.Label className="fw-semibold">
+          {index + 1}. {question.text}
+        </Form.Label>
+        {question.options.map((option) =>
+          <Form.Check
+            key={option.score}
+            id={`${question.id}-${option.score}`}
+            isInvalid={!!errors[question.id]}
+            label={option.label}
+            type="radio"
+            value={option.score}
+            {...register(question.id, { required: `Please select a response` })}
+          />)}
+        {errors[question.id] &&
+          <Form.Text className="text-danger">
+            {errors[question.id].message}
+          </Form.Text>}
+      </Form.Group>)}
 
-    <Form.Group controlId="riskLevel">
-      <Form.Label>Risk Level</Form.Label>
-      <Form.Control
-        type="text"
-        name="riskLevel"
-        value={formData.riskLevel}
-        onChange={handleChange}
-        required
-      />
-    </Form.Group>
-
-    <Button variant="primary" type="submit">Submit</Button>
+    <Button disabled={isSubmitting} type="submit" variant="primary">
+      {isSubmitting ? `Submitting...` : `Submit Assessment`}
+    </Button>
   </Form>;
 };

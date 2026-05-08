@@ -9,11 +9,11 @@ export class AssessmentRepository implements IAssessmentRepository {
   }
 
   public async findAll(): Promise<AssessmentType[]> {
-    // TODO: Implement Find All
-    return Promise.reject(new Error(`Not implemented`));
+    return Assessment.findAll();
   }
 
   public async delete(id: number): Promise<boolean> {
-    return Promise.reject(new Error(`Not implemented`));
+    const count = await Assessment.destroy({ where: { id } });
+    return count > 0;
   }
 }

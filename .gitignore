@@ -26,3 +26,4 @@ yarn-error.log*
 config.json
 config/*
 !config/default.json
+CLAUDE.md
