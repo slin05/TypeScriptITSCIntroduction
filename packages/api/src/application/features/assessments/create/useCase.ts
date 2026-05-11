@@ -16,7 +16,7 @@ export class CreateAssessmentUseCase implements IUseCase<CreateAssessmentDTO, As
 
     // TODO: Create the assessment using the repository
     // HINT: use this.assessmentRepository.create(assessmentData)
-    return Promise.reject(new Error(`CreateAssessmentUseCase.execute() not implemented yet`));
+    return this.assessmentRepository.create(assessmentData);
   }
 
   // TODO: Add private helper methods for validation and risk level calculation

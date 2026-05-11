@@ -46,6 +46,7 @@ export default tseslint.config(
       "react-hooks": fixupPluginRules(reactHooks),
     },
     rules: {
+      "react/jsx-uses-vars": 2,
       "@stylistic/indent-binary-ops": 0,
       "@stylistic/jsx-closing-bracket-location": 0,
       "@stylistic/jsx-closing-tag-location": 0,
